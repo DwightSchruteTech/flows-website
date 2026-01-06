@@ -47,8 +47,18 @@ export async function POST(request: NextRequest) {
       );
     } catch (signupError: any) {
       console.error('Memberstack signup error:', signupError);
+      
+      let errorMessage = 'Signup failed';
+      if (signupError.message) {
+        errorMessage = signupError.message;
+      } else if (signupError.code === 'EMAIL_ALREADY_EXISTS') {
+        errorMessage = 'An account with this email already exists';
+      } else if (signupError.code === 'WEAK_PASSWORD') {
+        errorMessage = 'Password is too weak. Please use a stronger password';
+      }
+      
       return NextResponse.json(
-        { error: signupError.message || 'Signup failed' },
+        { error: errorMessage },
         { status: 400 }
       );
     }
