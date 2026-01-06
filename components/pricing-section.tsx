@@ -11,14 +11,9 @@ export function PricingSection() {
   const [processingPlan, setProcessingPlan] = useState<string | null>(null)
 
   const handleFreePlan = async () => {
-    console.log('=== PRICING: Free plan button clicked ===')
-    console.log('Plan ID:', PLAN_IDS.FREE)
-    console.log('Member logged in:', !!member)
     try {
       setProcessingPlan('free')
-      console.log('Calling addFreePlan...')
       await addFreePlan(PLAN_IDS.FREE)
-      console.log('Add free plan completed')
     } catch (error) {
       console.error('Error adding free plan:', error)
     } finally {
@@ -27,12 +22,9 @@ export function PricingSection() {
   }
 
   const handleMonthlyTrial = async () => {
-    console.log('Monthly plan button clicked')
     try {
       setProcessingPlan('monthly')
-      console.log('Calling purchasePlan with:', PLAN_PRICE_IDS.PRO_MONTHLY)
       await purchasePlan(PLAN_PRICE_IDS.PRO_MONTHLY)
-      console.log('Purchase plan function completed')
     } catch (error) {
       console.error('Error purchasing monthly plan:', error)
       setProcessingPlan(null)
@@ -40,12 +32,9 @@ export function PricingSection() {
   }
 
   const handleYearlyTrial = async () => {
-    console.log('Yearly plan button clicked')
     try {
       setProcessingPlan('yearly')
-      console.log('Calling purchasePlan with:', PLAN_PRICE_IDS.PRO_YEARLY)
       await purchasePlan(PLAN_PRICE_IDS.PRO_YEARLY)
-      console.log('Purchase plan function completed')
     } catch (error) {
       console.error('Error purchasing yearly plan:', error)
       setProcessingPlan(null)
