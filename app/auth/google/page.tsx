@@ -20,10 +20,22 @@ function GoogleAuthContent() {
 
         setMessage('Signing in with Google...');
 
-        await ms.loginWithProvider({
-          provider: 'GOOGLE',
-          allowSignup: true,
-        });
+        // Use signupWithProvider with allowLogin: true instead of loginWithProvider
+        // This handles both signup and login cases
+        try {
+          await ms.signupWithProvider({
+            provider: 'GOOGLE',
+            allowLogin: true, // Allow login if account exists
+            plans: [{ planId: 'pln_free-xgrp0bsv' }], // Add free plan for new users
+          });
+        } catch (providerError: any) {
+          // If signupWithProvider fails, try loginWithProvider as fallback
+          console.log('Trying loginWithProvider as fallback...');
+          await ms.loginWithProvider({
+            provider: 'GOOGLE',
+            allowSignup: true,
+          });
+        }
 
         const unsubscribe = ms.onAuthChange(async (member) => {
           if (member?.data) {
@@ -69,7 +81,7 @@ function GoogleAuthContent() {
       } catch (error: any) {
         console.error('Google auth error:', error);
         setStatus('error');
-        setMessage(error.message || 'Failed to sign in with Google. Please try again.');
+        setMessage(error.message || 'Failed to sign in with Google. Please check your Memberstack Google OAuth configuration.');
       }
     };
 
@@ -95,12 +107,17 @@ function GoogleAuthContent() {
           <>
             <div className="text-red-500 text-4xl mb-4">✗</div>
             <p className="text-foreground font-medium">{message}</p>
-            <button
-              onClick={() => window.location.reload()}
-              className="mt-4 px-4 py-2 bg-primary text-primary-foreground rounded-md"
-            >
-              Try Again
-            </button>
+            <div className="mt-4 space-y-2">
+              <p className="text-sm text-muted-foreground">
+                Make sure Google OAuth is enabled in your Memberstack dashboard.
+              </p>
+              <button
+                onClick={() => window.location.reload()}
+                className="mt-4 px-4 py-2 bg-primary text-primary-foreground rounded-md"
+              >
+                Try Again
+              </button>
+            </div>
           </>
         )}
       </div>

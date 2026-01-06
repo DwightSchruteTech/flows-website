@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
+import memberstack from '@memberstack/dom';
 
-const MEMBERSTACK_ADMIN_API = 'https://admin.memberstack.com';
-const MEMBERSTACK_SECRET_KEY = process.env.MEMBERSTACK_SECRET_KEY;
+const PUBLIC_KEY = process.env.NEXT_PUBLIC_MEMBERSTACK_PUBLIC_KEY || 'pk_sb_921e54f1773946f5da41';
 
 export async function POST(request: NextRequest) {
   try {
@@ -14,60 +14,37 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!MEMBERSTACK_SECRET_KEY) {
-      return NextResponse.json(
-        { error: 'Server configuration error' },
-        { status: 500 }
-      );
-    }
+    // Initialize Memberstack SDK
+    const ms = memberstack.init({
+      publicKey: PUBLIC_KEY,
+    });
 
-    // Use Memberstack Admin API to create a new member
     try {
-      const signupResponse = await fetch(`${MEMBERSTACK_ADMIN_API}/members`, {
-        method: 'POST',
-        headers: {
-          'X-API-KEY': MEMBERSTACK_SECRET_KEY,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email,
-          password,
-          planConnections: [{ planId: 'pln_free-xgrp0bsv' }],
-        }),
+      const result = await ms.signupMemberEmailPassword({
+        email,
+        password,
+        plans: [{ planId: 'pln_free-xgrp0bsv' }], // Add free plan by default
       });
 
-      if (!signupResponse.ok) {
-        const errorData = await signupResponse.json().catch(() => ({}));
-        let errorMessage = 'Signup failed';
-        
-        if (errorData.message) {
-          errorMessage = errorData.message;
-        } else if (signupResponse.status === 409 || errorData.code === 'EMAIL_ALREADY_EXISTS') {
-          errorMessage = 'An account with this email already exists';
-        }
-
-        return NextResponse.json(
-          { error: errorMessage },
-          { status: signupResponse.status || 400 }
-        );
+      if (result.data?.member) {
+        const token = Buffer.from(`${result.data.member.id}:${Date.now()}`).toString('base64');
+        return NextResponse.json({
+          success: true,
+          member: {
+            id: result.data.member.id,
+            auth: {
+              email: result.data.member.auth?.email || email,
+            },
+            planConnections: result.data.member.planConnections || [],
+          },
+          token: token,
+        });
       }
 
-      const member = await signupResponse.json();
-
-      // Generate session token
-      const token = Buffer.from(`${member.id}:${Date.now()}`).toString('base64');
-
-      return NextResponse.json({
-        success: true,
-        member: {
-          id: member.id,
-          auth: {
-            email: member.auth?.email || email,
-          },
-          planConnections: member.planConnections || [],
-        },
-        token: token,
-      });
+      return NextResponse.json(
+        { error: 'Signup failed' },
+        { status: 400 }
+      );
     } catch (signupError: any) {
       console.error('Memberstack signup error:', signupError);
       return NextResponse.json(
