@@ -64,14 +64,18 @@ export function MemberstackProvider({ children }: { children: React.ReactNode })
 
       const initializeAuth = async () => {
         try {
+          console.log('Memberstack context: Initializing auth...');
           const result = await ms.getCurrentMember();
+          console.log('Memberstack context: getCurrentMember result:', result);
           setMember(result.data || null);
           setError(null);
-        } catch {
+        } catch (err) {
+          console.log('Memberstack context: No member found (expected if not logged in):', err);
           setMember(null);
           setError(null);
         } finally {
           setIsLoading(false);
+          console.log('Memberstack context: Initialization complete');
         }
       };
 
@@ -93,18 +97,27 @@ export function MemberstackProvider({ children }: { children: React.ReactNode })
   }, []);
 
   const login = useCallback(async () => {
-    if (typeof window === 'undefined') return;
-    const ms = await initMemberstack();
-    if (!ms) return;
-
+    console.log('=== CONTEXT: login() called ===');
+    if (typeof window === 'undefined') {
+      console.log('Window undefined, returning');
+      return;
+    }
     try {
+      console.log('Getting memberstack instance...');
+      const ms = await initMemberstack();
+      if (!ms) {
+        console.error('Memberstack instance is null!');
+        return;
+      }
+      console.log('Memberstack instance obtained, opening modal...');
       setIsLoading(true);
       setError(null);
       // Open Memberstack's login modal (configure Google button in the dashboard)
       await ms.openModal({ type: 'LOGIN' });
+      console.log('Login modal opened successfully');
     } catch (err: any) {
+      console.error('Login error in context:', err);
       setError(err.message || 'Failed to open login modal');
-      console.error('Login error:', err);
     } finally {
       setIsLoading(false);
     }
@@ -129,31 +142,43 @@ export function MemberstackProvider({ children }: { children: React.ReactNode })
   }, []);
 
   const purchasePlan = useCallback(async (priceId: string) => {
-    if (typeof window === 'undefined') return;
-    const ms = await initMemberstack();
-    if (!ms) return;
-
+    console.log('=== CONTEXT: purchasePlan() called with priceId:', priceId);
+    if (typeof window === 'undefined') {
+      console.log('Window undefined, returning');
+      return;
+    }
     try {
+      console.log('Getting memberstack instance...');
+      const ms = await initMemberstack();
+      if (!ms) {
+        console.error('Memberstack instance is null!');
+        return;
+      }
       setIsLoading(true);
       setError(null);
 
+      console.log('Checking current member...');
       const current = await ms.getCurrentMember();
+      console.log('Current member:', current);
       if (!current.data) {
+        console.log('No member found, opening login modal...');
         // Not logged in → open login modal (with Google) then let them click again
         await ms.openModal({ type: 'LOGIN' });
         setIsLoading(false);
         return;
       }
 
+      console.log('Member found, creating checkout session...');
       await ms.purchasePlansWithCheckout({
         priceId,
         successUrl: `${window.location.origin}/success`,
         cancelUrl: `${window.location.origin}/cancel`,
       });
+      console.log('Checkout session created, redirecting to Stripe...');
       // Stripe handles redirect
     } catch (err: any) {
+      console.error('Purchase error in context:', err);
       setError(err.message || 'Failed to start checkout');
-      console.error('Purchase error:', err);
       throw err;
     } finally {
       setIsLoading(false);

@@ -11,16 +11,14 @@ export function PricingSection() {
   const [processingPlan, setProcessingPlan] = useState<string | null>(null)
 
   const handleFreePlan = async () => {
+    console.log('=== PRICING: Free plan button clicked ===')
+    console.log('Plan ID:', PLAN_IDS.FREE)
+    console.log('Member logged in:', !!member)
     try {
       setProcessingPlan('free')
-      // If user is logged in, add the free plan directly
-      if (member) {
-        await addFreePlan(PLAN_IDS.FREE)
-      } else {
-        // If not logged in, this will trigger Google login
-        // After login, user needs to click again
-        await addFreePlan(PLAN_IDS.FREE)
-      }
+      console.log('Calling addFreePlan...')
+      await addFreePlan(PLAN_IDS.FREE)
+      console.log('Add free plan completed')
     } catch (error) {
       console.error('Error adding free plan:', error)
     } finally {

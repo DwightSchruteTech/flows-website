@@ -35,8 +35,19 @@ export function Navigation() {
   const scrollToPricing = () => scrollToSection("pricing")
 
   const handleLogin = async () => {
-    if (isLoading) return
-    await login()
+    console.log('=== NAVIGATION: Login button clicked ===')
+    console.log('isLoading:', isLoading)
+    if (isLoading) {
+      console.log('Already loading, skipping...')
+      return
+    }
+    try {
+      console.log('Calling login() function...')
+      await login()
+      console.log('Login function completed')
+    } catch (error) {
+      console.error('Login error in navigation:', error)
+    }
   }
 
   const handleLogout = async () => {
