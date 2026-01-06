@@ -1,0 +1,13 @@
+<svg width="220" height="80" viewBox="0 0 220 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="220" height="80" fill="black"/>
+  <g transform="translate(20,12)" fill="none" stroke="#3AB9FF" stroke-width="8" stroke-linecap="round">
+    <path d="M0 12 C 15 0 35 0 50 12 C 65 24 85 24 100 12 C 115 0 135 0 150 12" />
+    <path d="M0 32 C 15 20 35 20 50 32 C 65 44 85 44 100 32 C 115 20 135 20 150 32" />
+    <path d="M0 52 C 15 40 35 40 50 52 C 65 64 85 64 100 52 C 115 40 135 40 150 52" />
+  </g>
+  <text x="20" y="72" fill="#FFFFFF" font-family="system-ui, -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif" font-size="28" font-weight="600">
+    Flows
+  </text>
+</svg>
+
+

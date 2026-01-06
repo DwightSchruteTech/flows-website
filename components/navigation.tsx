@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
-import { Play, LogOut, User, CreditCard, ChevronDown } from "lucide-react"
+import { LogOut, User, CreditCard, ChevronDown } from "lucide-react"
 import { useMemberstack } from "@/contexts/memberstack-context"
 
 export function Navigation() {
@@ -63,10 +63,11 @@ export function Navigation() {
       <div className="max-w-7xl mx-auto px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-              <Play className="w-4 h-4 text-primary-foreground fill-current" />
-            </div>
-            <span className="text-xl font-semibold text-foreground">Flows</span>
+            <img
+              src="/flows-logo.svg"
+              alt="Flows logo"
+              className="h-8 w-auto"
+            />
           </div>
 
           <div className="hidden md:flex items-center gap-8">
