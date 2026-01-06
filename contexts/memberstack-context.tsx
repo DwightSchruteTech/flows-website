@@ -75,8 +75,9 @@ export function MemberstackProvider({ children }: { children: React.ReactNode })
         }
       };
 
-      unsubscribe = ms.onAuthChange((res: any) => {
-        const nextMember = res?.data || null;
+      unsubscribe = ms.onAuthChange((payload: any) => {
+        // Memberstack may call this with either { data: member } or with member directly
+        const nextMember = payload?.data ?? payload ?? null;
         setMember(nextMember);
         setError(null);
         setIsLoading(false);
