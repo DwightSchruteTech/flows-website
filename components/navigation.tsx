@@ -118,6 +118,17 @@ export function Navigation() {
                     <button
                       onClick={() => {
                         setShowProfileMenu(false)
+                        router.push("/account")
+                      }}
+                      className="w-full px-4 py-2 text-left text-sm hover:bg-secondary flex items-center gap-2 text-foreground transition-colors"
+                    >
+                      <User className="w-4 h-4" />
+                      Account
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        setShowProfileMenu(false)
                         router.push("/account-billing")
                       }}
                       className="w-full px-4 py-2 text-left text-sm hover:bg-secondary flex items-center gap-2 text-foreground transition-colors"
