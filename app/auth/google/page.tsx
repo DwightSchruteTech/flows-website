@@ -30,24 +30,21 @@ function GoogleAuthContent() {
             setStatus('success');
             setMessage('Authentication successful! Redirecting to app...');
 
+            // Get token from Memberstack session
             try {
-              const response = await fetch('/api/auth/me', {
-                credentials: 'include',
-              });
-
-              if (response.ok) {
-                const data = await response.json();
-                const appUrl = `${redirect}?memberId=${encodeURIComponent(member.data.id || '')}`;
-                setTimeout(() => {
-                  window.location.href = appUrl;
-                }, 1000);
-              } else {
-                setTimeout(() => {
-                  window.location.href = `${redirect}?memberId=${encodeURIComponent(member.data.id || '')}`;
-                }, 1000);
-              }
+              // Create a token for the app (memberId:timestamp)
+              const token = Buffer.from(`${member.data.id}:${Date.now()}`).toString('base64');
+              
+              // Redirect to app with token
+              const appUrl = `${redirect}?token=${encodeURIComponent(token)}`;
+              console.log('Redirecting to app:', appUrl);
+              
+              setTimeout(() => {
+                window.location.href = appUrl;
+              }, 1000);
             } catch (error) {
-              console.error('Error getting token:', error);
+              console.error('Error creating token:', error);
+              // Fallback: redirect with memberId
               setTimeout(() => {
                 window.location.href = `${redirect}?memberId=${encodeURIComponent(member.data.id || '')}`;
               }, 1000);
