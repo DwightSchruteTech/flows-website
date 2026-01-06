@@ -1,10 +1,10 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import initMemberstack from '@/lib/memberstack';
 
-export default function GoogleAuthPage() {
+function GoogleAuthContent() {
   const searchParams = useSearchParams();
   const redirect = searchParams.get('redirect') || 'flows://auth/callback';
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
@@ -111,3 +111,17 @@ export default function GoogleAuthPage() {
   );
 }
 
+export default function GoogleAuthPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <p className="text-muted-foreground mt-4">Loading...</p>
+        </div>
+      </div>
+    }>
+      <GoogleAuthContent />
+    </Suspense>
+  );
+}
