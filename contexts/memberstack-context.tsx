@@ -113,7 +113,9 @@ export function MemberstackProvider({ children }: { children: React.ReactNode })
       setIsLoading(true);
       setError(null);
       // Open Memberstack's login modal (configure Google button in the dashboard)
-      await ms.openModal({ type: 'LOGIN' });
+      // Some Memberstack versions expect a string argument instead of an options object
+      // Use the string form to avoid type.toLowerCase errors
+      await ms.openModal('LOGIN');
       console.log('Login modal opened successfully');
     } catch (err: any) {
       console.error('Login error in context:', err);
@@ -196,11 +198,9 @@ export function MemberstackProvider({ children }: { children: React.ReactNode })
 
       const current = await ms.getCurrentMember();
       if (!current.data) {
-        // Not logged in → open signup modal with plan preselected
-        await ms.openModal({
-          type: 'SIGNUP',
-          plans: [{ planId }],
-        });
+        // Not logged in → open signup modal
+        // Use string form to avoid type.toLowerCase errors and keep behaviour simple
+        await ms.openModal('SIGNUP');
         setIsLoading(false);
         return;
       }
