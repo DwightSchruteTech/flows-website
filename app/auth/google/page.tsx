@@ -20,21 +20,24 @@ function GoogleAuthContent() {
 
         setMessage('Signing in with Google...');
 
-        // Use signupWithProvider with allowLogin: true instead of loginWithProvider
-        // This handles both signup and login cases
+        // Try signupWithProvider first (handles both signup and login with allowLogin: true)
         try {
           await ms.signupWithProvider({
             provider: 'GOOGLE',
             allowLogin: true, // Allow login if account exists
             plans: [{ planId: 'pln_free-xgrp0bsv' }], // Add free plan for new users
           });
-        } catch (providerError: any) {
+        } catch (signupError: any) {
           // If signupWithProvider fails, try loginWithProvider as fallback
-          console.log('Trying loginWithProvider as fallback...');
-          await ms.loginWithProvider({
-            provider: 'GOOGLE',
-            allowSignup: true,
-          });
+          console.log('signupWithProvider failed, trying loginWithProvider...', signupError);
+          try {
+            await ms.loginWithProvider({
+              provider: 'GOOGLE',
+              allowSignup: true,
+            });
+          } catch (loginError: any) {
+            throw new Error('Google OAuth is not configured in your Memberstack dashboard. Please enable Google OAuth in Settings → Authentication.');
+          }
         }
 
         const unsubscribe = ms.onAuthChange(async (member) => {
@@ -81,7 +84,7 @@ function GoogleAuthContent() {
       } catch (error: any) {
         console.error('Google auth error:', error);
         setStatus('error');
-        setMessage(error.message || 'Failed to sign in with Google. Please check your Memberstack Google OAuth configuration.');
+        setMessage(error.message || 'Failed to sign in with Google. Please check your Memberstack Google OAuth configuration in the dashboard.');
       }
     };
 
@@ -109,8 +112,14 @@ function GoogleAuthContent() {
             <p className="text-foreground font-medium">{message}</p>
             <div className="mt-4 space-y-2">
               <p className="text-sm text-muted-foreground">
-                Make sure Google OAuth is enabled in your Memberstack dashboard.
+                To enable Google OAuth:
               </p>
+              <ol className="text-sm text-muted-foreground text-left list-decimal list-inside space-y-1 max-w-md mx-auto">
+                <li>Go to your Memberstack Dashboard</li>
+                <li>Navigate to Settings → Authentication</li>
+                <li>Enable Google OAuth provider</li>
+                <li>Configure your Google OAuth credentials</li>
+              </ol>
               <button
                 onClick={() => window.location.reload()}
                 className="mt-4 px-4 py-2 bg-primary text-primary-foreground rounded-md"
