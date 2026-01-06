@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const MEMBERSTACK_API = 'https://api.memberstack.com';
+const MEMBERSTACK_ADMIN_API = 'https://admin.memberstack.com';
 const MEMBERSTACK_SECRET_KEY = process.env.MEMBERSTACK_SECRET_KEY;
-const PUBLIC_KEY = process.env.NEXT_PUBLIC_MEMBERSTACK_PUBLIC_KEY || 'pk_sb_921e54f1773946f5da41';
 
 export async function POST(request: NextRequest) {
   try {
@@ -22,11 +21,40 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Use Memberstack API to login
-    // Note: We need to use the API endpoint that supports password verification
+    // Memberstack doesn't provide direct password verification via Admin API
+    // We need to use the public API endpoint for authentication
+    // This is a workaround - in production, consider using Memberstack's webhook or session-based auth
     try {
-      // First, get the member by email to verify they exist
-      const membersResponse = await fetch(`${MEMBERSTACK_API}/members?email=${encodeURIComponent(email)}`, {
+      // Use Memberstack's public auth endpoint
+      const authResponse = await fetch('https://api.memberstack.com/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Public-Key': process.env.NEXT_PUBLIC_MEMBERSTACK_PUBLIC_KEY || 'pk_sb_921e54f1773946f5da41',
+        },
+        body: JSON.stringify({ email, password }),
+      });
+
+      if (!authResponse.ok) {
+        const errorData = await authResponse.json().catch(() => ({}));
+        return NextResponse.json(
+          { error: errorData.message || 'Invalid email or password' },
+          { status: 401 }
+        );
+      }
+
+      const authData = await authResponse.json();
+      const memberId = authData.member?.id || authData.id;
+
+      if (!memberId) {
+        return NextResponse.json(
+          { error: 'Login failed' },
+          { status: 401 }
+        );
+      }
+
+      // Get full member details from Admin API
+      const memberResponse = await fetch(`${MEMBERSTACK_ADMIN_API}/members/${memberId}`, {
         method: 'GET',
         headers: {
           'X-API-KEY': MEMBERSTACK_SECRET_KEY,
@@ -34,44 +62,14 @@ export async function POST(request: NextRequest) {
         },
       });
 
-      if (!membersResponse.ok) {
+      if (!memberResponse.ok) {
         return NextResponse.json(
-          { error: 'Invalid email or password' },
+          { error: 'Failed to fetch member details' },
           { status: 401 }
         );
       }
 
-      const membersData = await membersResponse.json();
-      const members = Array.isArray(membersData) ? membersData : membersData.members || [];
-      const member = members.find((m: any) => m.auth?.email === email);
-
-      if (!member) {
-        return NextResponse.json(
-          { error: 'Invalid email or password' },
-          { status: 401 }
-        );
-      }
-
-      // For password verification, we'll use a workaround:
-      // Try to authenticate via the public API endpoint
-      // This is a simplified approach - in production, you'd want proper password hashing verification
-      const authResponse = await fetch(`${MEMBERSTACK_API}/auth/login`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Public-Key': PUBLIC_KEY,
-        },
-        body: JSON.stringify({ email, password }),
-      });
-
-      if (!authResponse.ok) {
-        return NextResponse.json(
-          { error: 'Invalid email or password' },
-          { status: 401 }
-        );
-      }
-
-      const authData = await authResponse.json();
+      const member = await memberResponse.json();
 
       // Generate a session token for the macOS app
       const token = Buffer.from(`${member.id}:${Date.now()}`).toString('base64');

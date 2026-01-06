@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const MEMBERSTACK_API = 'https://api.memberstack.com';
+const MEMBERSTACK_ADMIN_API = 'https://admin.memberstack.com';
 const MEMBERSTACK_SECRET_KEY = process.env.MEMBERSTACK_SECRET_KEY;
-const PUBLIC_KEY = process.env.NEXT_PUBLIC_MEMBERSTACK_PUBLIC_KEY || 'pk_sb_921e54f1773946f5da41';
 
 export async function POST(request: NextRequest) {
   try {
@@ -22,9 +21,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Use Memberstack API to create a new member
+    // Use Memberstack Admin API to create a new member
     try {
-      const signupResponse = await fetch(`${MEMBERSTACK_API}/members`, {
+      const signupResponse = await fetch(`${MEMBERSTACK_ADMIN_API}/members`, {
         method: 'POST',
         headers: {
           'X-API-KEY': MEMBERSTACK_SECRET_KEY,
@@ -33,7 +32,7 @@ export async function POST(request: NextRequest) {
         body: JSON.stringify({
           email,
           password,
-          plans: [{ planId: 'pln_free-xgrp0bsv' }],
+          planConnections: [{ planId: 'pln_free-xgrp0bsv' }],
         }),
       });
 
@@ -43,7 +42,7 @@ export async function POST(request: NextRequest) {
         
         if (errorData.message) {
           errorMessage = errorData.message;
-        } else if (signupResponse.status === 409) {
+        } else if (signupResponse.status === 409 || errorData.code === 'EMAIL_ALREADY_EXISTS') {
           errorMessage = 'An account with this email already exists';
         }
 
