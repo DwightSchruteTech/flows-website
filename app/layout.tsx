@@ -39,25 +39,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="dark">
-      <body className={`font-sans antialiased`}>
+      <body className="font-sans antialiased">
         <MemberstackProvider>
           {children}
         </MemberstackProvider>
         <Analytics />
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              // Suppress postMessage errors from OAuth callbacks
-              window.addEventListener('error', function(e) {
-                if (e.message && e.message.includes('postMessage')) {
-                  e.preventDefault();
-                  console.log('OAuth callback postMessage error suppressed (this is normal)');
-                  return true;
-                }
-              }, true);
-            `,
-          }}
-        />
       </body>
     </html>
   )

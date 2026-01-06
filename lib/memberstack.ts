@@ -1,46 +1,26 @@
-// Initialize Memberstack with your public key
-// In production, use environment variable: process.env.NEXT_PUBLIC_MEMBERSTACK_PUBLIC_KEY
-const MEMBERSTACK_PUBLIC_KEY = process.env.NEXT_PUBLIC_MEMBERSTACK_PUBLIC_KEY || 'pk_sb_921e54f1773946f5da41';
+// Use env var in production; keep your existing sandbox key as local fallback
+const PUBLIC_KEY = process.env.NEXT_PUBLIC_MEMBERSTACK_PUBLIC_KEY || 'pk_sb_921e54f1773946f5da41';
 
-// Initialize Memberstack only on the client side to avoid SSR issues
-let ms: any = null;
+let memberstack: any = null;
 let memberstackModule: any = null;
 
-export const getMemberstack = async () => {
-  // Only initialize on the client side
-  if (typeof window === 'undefined') {
-    // Return a mock object during SSR that will throw if methods are called
-    return {
-      getCurrentMember: () => Promise.reject(new Error('Memberstack not initialized on server')),
-      onAuthChange: () => () => {},
-      loginWithProvider: () => Promise.reject(new Error('Memberstack not initialized on server')),
-      logout: () => Promise.reject(new Error('Memberstack not initialized on server')),
-      purchasePlansWithCheckout: () => Promise.reject(new Error('Memberstack not initialized on server')),
-      addPlan: () => Promise.reject(new Error('Memberstack not initialized on server')),
-      openModal: () => Promise.reject(new Error('Memberstack not initialized on server')),
-    } as any;
-  }
+export const initMemberstack = async () => {
+  // Only run in the browser
+  if (typeof window === 'undefined') return null;
 
-  // Dynamically import memberstack only on client side
+  // Dynamically import to avoid SSR issues
   if (!memberstackModule) {
     memberstackModule = await import('@memberstack/dom');
   }
 
-  // Initialize on first call in browser
-  if (!ms) {
-    try {
-      ms = memberstackModule.default.init({
-        publicKey: MEMBERSTACK_PUBLIC_KEY,
-        useCookies: true, // Enable cookie-based authentication
-      });
-      console.log('Memberstack initialized successfully');
-    } catch (initError) {
-      console.error('Memberstack initialization error:', initError);
-      throw initError;
-    }
+  if (!memberstack) {
+    memberstack = memberstackModule.default.init({
+      publicKey: PUBLIC_KEY,
+      useCookies: true,
+    });
   }
 
-  return ms;
+  return memberstack;
 };
 
 // Plan price IDs from your Memberstack dashboard (for paid plans)
@@ -55,8 +35,4 @@ export const PLAN_IDS = {
   FREE: 'pln_free-bdr20742', // Update this with your actual free plan ID
 } as const;
 
-// Export getMemberstack as default for backward compatibility
-export default getMemberstack;
-
-
-
+export default initMemberstack;

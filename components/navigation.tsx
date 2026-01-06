@@ -8,56 +8,35 @@ import { useMemberstack } from "@/contexts/memberstack-context"
 export function Navigation() {
   const [scrolled, setScrolled] = useState(false)
   const [showProfileMenu, setShowProfileMenu] = useState(false)
-  const { member, isLoading, loginWithGoogle, logout, launchBillingPortal } = useMemberstack()
+  const { member, isLoading, login, logout, launchBillingPortal } = useMemberstack()
   const menuRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    const handleScroll = () => {
-      setScrolled(window.scrollY > 20)
-    }
+    const handleScroll = () => setScrolled(window.scrollY > 20)
     window.addEventListener("scroll", handleScroll)
     return () => window.removeEventListener("scroll", handleScroll)
   }, [])
 
-  // Close menu when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
         setShowProfileMenu(false)
       }
     }
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
+    document.addEventListener("mousedown", handleClickOutside)
+    return () => document.removeEventListener("mousedown", handleClickOutside)
   }, [])
 
   const scrollToSection = (id: string) => {
     const element = document.getElementById(id)
-    if (element) {
-      element.scrollIntoView({ behavior: "smooth", block: "start" })
-    }
+    if (element) element.scrollIntoView({ behavior: "smooth", block: "start" })
   }
 
-  const scrollToPricing = () => {
-    scrollToSection("pricing")
-  }
+  const scrollToPricing = () => scrollToSection("pricing")
 
   const handleLogin = async () => {
-    console.log('=== LOGIN BUTTON CLICKED ===')
-    console.log('isLoading:', isLoading)
-    console.log('loginWithGoogle function:', typeof loginWithGoogle)
-    
-    if (isLoading) {
-      console.log('Already loading, skipping...')
-      return
-    }
-    
-    try {
-      console.log('Calling loginWithGoogle...')
-      await loginWithGoogle()
-      console.log('Login function completed')
-    } catch (error) {
-      console.error('Login error caught:', error)
-    }
+    if (isLoading) return
+    await login()
   }
 
   const handleLogout = async () => {
@@ -69,15 +48,17 @@ export function Navigation() {
     try {
       await launchBillingPortal()
       setShowProfileMenu(false)
-    } catch (err) {
-      // Error is handled in context
+    } catch {
+      // error handled in context
     }
   }
 
   return (
     <nav
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-        scrolled ? "bg-background/80 backdrop-blur-xl border-b border-border shadow-sm" : "bg-transparent"
+        scrolled
+          ? "bg-background/80 backdrop-blur-xl border-b border-border shadow-sm"
+          : "bg-transparent"
       }`}
     >
       <div className="max-w-7xl mx-auto px-6 lg:px-8">
@@ -122,7 +103,7 @@ export function Navigation() {
                     <User className="w-4 h-4 text-primary-foreground" />
                   </div>
                   <span className="hidden sm:inline text-sm font-medium text-foreground">
-                    {member.auth?.email?.split('@')[0] || "Profile"}
+                    {member.auth?.email?.split("@")[0] || "Profile"}
                   </span>
                   <ChevronDown className="w-4 h-4 text-muted-foreground" />
                 </button>
@@ -130,9 +111,11 @@ export function Navigation() {
                 {showProfileMenu && (
                   <div className="absolute right-0 mt-2 w-56 bg-card border border-border rounded-lg shadow-lg py-2 z-50">
                     <div className="px-4 py-3 border-b border-border">
-                      <p className="text-sm font-medium text-foreground">{member.auth?.email}</p>
+                      <p className="text-sm font-medium text-foreground">
+                        {member.auth?.email}
+                      </p>
                     </div>
-                    
+
                     <button
                       onClick={handleManageBilling}
                       className="w-full px-4 py-2 text-left text-sm hover:bg-secondary flex items-center gap-2 text-foreground transition-colors"
@@ -140,7 +123,7 @@ export function Navigation() {
                       <CreditCard className="w-4 h-4" />
                       Manage Billing
                     </button>
-                    
+
                     <button
                       onClick={handleLogout}
                       className="w-full px-4 py-2 text-left text-sm hover:bg-secondary flex items-center gap-2 text-destructive transition-colors"
@@ -153,15 +136,11 @@ export function Navigation() {
               </div>
             ) : (
               <>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="text-foreground" 
-                  onClick={(e) => {
-                    e.preventDefault();
-                    console.log('Button onClick fired directly');
-                    handleLogin();
-                  }} 
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-foreground"
+                  onClick={handleLogin}
                   disabled={isLoading}
                 >
                   Log in
