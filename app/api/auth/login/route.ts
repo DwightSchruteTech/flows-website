@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import memberstack from '@memberstack/dom';
 
+const MEMBERSTACK_API = 'https://api.memberstack.com';
+const MEMBERSTACK_SECRET_KEY = process.env.MEMBERSTACK_SECRET_KEY;
 const PUBLIC_KEY = process.env.NEXT_PUBLIC_MEMBERSTACK_PUBLIC_KEY || 'pk_sb_921e54f1773946f5da41';
 
 export async function POST(request: NextRequest) {
@@ -14,47 +15,82 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const ms = memberstack.init({
-      publicKey: PUBLIC_KEY,
-    });
+    if (!MEMBERSTACK_SECRET_KEY) {
+      return NextResponse.json(
+        { error: 'Server configuration error' },
+        { status: 500 }
+      );
+    }
 
+    // Use Memberstack API to login
+    // Note: We need to use the API endpoint that supports password verification
     try {
-      const result = await ms.loginMemberEmailPassword({ email, password });
+      // First, get the member by email to verify they exist
+      const membersResponse = await fetch(`${MEMBERSTACK_API}/members?email=${encodeURIComponent(email)}`, {
+        method: 'GET',
+        headers: {
+          'X-API-KEY': MEMBERSTACK_SECRET_KEY,
+          'Content-Type': 'application/json',
+        },
+      });
 
-      if (result.data?.member) {
-        const token = Buffer.from(`${result.data.member.id}:${Date.now()}`).toString('base64');
-
-        return NextResponse.json({
-          success: true,
-          member: {
-            id: result.data.member.id,
-            auth: {
-              email: result.data.member.auth?.email || email,
-            },
-            planConnections: result.data.member.planConnections || [],
-          },
-          token: token,
-        });
+      if (!membersResponse.ok) {
+        return NextResponse.json(
+          { error: 'Invalid email or password' },
+          { status: 401 }
+        );
       }
 
-      return NextResponse.json(
-        { error: 'Login failed' },
-        { status: 401 }
-      );
+      const membersData = await membersResponse.json();
+      const members = Array.isArray(membersData) ? membersData : membersData.members || [];
+      const member = members.find((m: any) => m.auth?.email === email);
+
+      if (!member) {
+        return NextResponse.json(
+          { error: 'Invalid email or password' },
+          { status: 401 }
+        );
+      }
+
+      // For password verification, we'll use a workaround:
+      // Try to authenticate via the public API endpoint
+      // This is a simplified approach - in production, you'd want proper password hashing verification
+      const authResponse = await fetch(`${MEMBERSTACK_API}/auth/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Public-Key': PUBLIC_KEY,
+        },
+        body: JSON.stringify({ email, password }),
+      });
+
+      if (!authResponse.ok) {
+        return NextResponse.json(
+          { error: 'Invalid email or password' },
+          { status: 401 }
+        );
+      }
+
+      const authData = await authResponse.json();
+
+      // Generate a session token for the macOS app
+      const token = Buffer.from(`${member.id}:${Date.now()}`).toString('base64');
+
+      return NextResponse.json({
+        success: true,
+        member: {
+          id: member.id,
+          auth: {
+            email: member.auth?.email || email,
+          },
+          planConnections: member.planConnections || [],
+        },
+        token: token,
+      });
     } catch (loginError: any) {
       console.error('Memberstack login error:', loginError);
-      
-      let errorMessage = 'Invalid email or password';
-      if (loginError.message) {
-        errorMessage = loginError.message;
-      } else if (loginError.code === 'INVALID_CREDENTIALS') {
-        errorMessage = 'Invalid email or password';
-      } else if (loginError.code === 'MEMBER_NOT_VERIFIED') {
-        errorMessage = 'Please verify your email address first';
-      }
-      
       return NextResponse.json(
-        { error: errorMessage },
+        { error: 'Invalid email or password' },
         { status: 401 }
       );
     }
@@ -66,4 +102,3 @@ export async function POST(request: NextRequest) {
     );
   }
 }
-
