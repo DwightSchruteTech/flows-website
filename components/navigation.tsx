@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Play, LogOut, User, CreditCard, ChevronDown } from "lucide-react"
 import { useMemberstack } from "@/contexts/memberstack-context"
@@ -8,8 +9,9 @@ import { useMemberstack } from "@/contexts/memberstack-context"
 export function Navigation() {
   const [scrolled, setScrolled] = useState(false)
   const [showProfileMenu, setShowProfileMenu] = useState(false)
-  const { member, isLoading, login, logout, launchBillingPortal } = useMemberstack()
+  const { member, isLoading, login, logout } = useMemberstack()
   const menuRef = useRef<HTMLDivElement>(null)
+  const router = useRouter()
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20)
@@ -53,15 +55,6 @@ export function Navigation() {
   const handleLogout = async () => {
     await logout()
     setShowProfileMenu(false)
-  }
-
-  const handleManageBilling = async () => {
-    try {
-      await launchBillingPortal()
-      setShowProfileMenu(false)
-    } catch {
-      // error handled in context
-    }
   }
 
   return (
@@ -128,7 +121,10 @@ export function Navigation() {
                     </div>
 
                     <button
-                      onClick={handleManageBilling}
+                      onClick={() => {
+                        setShowProfileMenu(false)
+                        router.push("/account-billing")
+                      }}
                       className="w-full px-4 py-2 text-left text-sm hover:bg-secondary flex items-center gap-2 text-foreground transition-colors"
                     >
                       <CreditCard className="w-4 h-4" />
